@@ -1,4 +1,7 @@
-Smart diff for kubernetes configs to ensure symmetric configuration
+Smart diff for kubernetes configs to ensure symmetric configuration.
+
+Projects that deploy very similar components like a worker and server,
+often should only have a very small diff, Kucodiff ensures that no accidental diff is introduced.
 
 Install
 =======
@@ -11,8 +14,30 @@ Usage
 =====
 
 ```Ruby
-CODE EXAMPLE
+require 'kucodiff'
+require 'minitest/autorun'
+
+describe "kubernetes configs" do
+  it "has a small diff" do
+    expect(Kucodiff.diff(Dir["kubernetes/**/*.{yml,json}"])).to eq(
+      "kubernetes/console.yml-kubernetes/server.yml" => %w[
+        metadata.name
+        spec.template.spec.containers.0.resources.limits.cpu
+        spec.template.spec.containers.0.env.PORT
+      ],
+      "kubernetes/console.yml-kubernetes/worker.yml" => %w[
+        metadata.name
+        spec.template.spec.containers.0.resources.limits.memory
+      ]
+    )
+  end
+end
 ```
+
+TODO
+====
+ - pick first Job/Deployment/DaemonSet to diff and not just first element
+ - 
 
 Author
 ======
