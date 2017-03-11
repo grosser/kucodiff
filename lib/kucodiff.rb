@@ -1,0 +1,2 @@
+module Kucodiff
+end
