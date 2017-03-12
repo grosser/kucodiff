@@ -2,15 +2,15 @@ require 'yaml'
 
 module Kucodiff
   class << self
-    def diff(files, ignore_command: false)
+    def diff(files, ignore: false)
       raise ArgumentError, "Need 2+ files" if files.size < 2
 
       base = files.shift
       base_template = read(base)
       files.each_with_object({}) do |other, all|
         result = different_keys(base_template, read(other))
-        result.reject! { |k| k.include?('.command.') } if ignore_command
-        all["#{base}-#{other}"] = result
+        result.reject! { |k| k =~ ignore } if ignore
+        all["#{base}-#{other}"] = result.sort
       end
     end
 

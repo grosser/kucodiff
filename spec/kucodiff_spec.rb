@@ -10,15 +10,22 @@ describe Kucodiff do
   let(:template) do
     {
       "metadata" => {"name" => "console", "namespace" => "bar"},
-      "spec" => {"template" => {"spec" => {"containers" => [
-        {
-          "resources" => {"limits" => {"cpu" => "1.0"}},
-          "env" => [
-            {"name" => "PORT", "value" => 1234},
-            {"name" => "FOO", "valueFrom" => "BAR"}
-          ]
+      "spec" => {
+        "template" => {
+          "metadata" => {"labels" => {}},
+          "spec" => {
+            "containers" => [
+              {
+                "resources" => {"limits" => {"cpu" => "1.0"}},
+                "env" => [
+                  {"name" => "PORT", "value" => 1234},
+                  {"name" => "FOO", "valueFrom" => "BAR"}
+                ]
+              }
+            ]
+          }
         }
-      ]}}}
+      }
     }
   end
 
@@ -29,13 +36,15 @@ describe Kucodiff do
 
       template = YAML.load(YAML.dump(template()))
       template['metadata']['name'] = 'server'
-      template['spec']['template']['spec']['containers'][0]['resources']['limits']['cpu'] = '2.3'
+      template['spec']['template']['spec']['containers'][0]['resources']['limits']['cpu'] = '2.3' # ignored
       template['spec']['template']['spec']['containers'][0]['env'].shift # remove PORT
+      template['spec']['template']['metadata']['labels']['proxy'] = 'foo'
       File.write('kubernetes/server.yml', YAML.dump(template))
 
       template = YAML.load(YAML.dump(template()))
       template['metadata']['name'] = 'worker'
-      template['spec']['template']['spec']['containers'][0]['resources']['limits']['memory'] = '23'
+      template['spec']['template']['spec']['containers'][0]['resources']['limits']['memory'] = '23' # ignored
+      template['spec']['template']['spec']['containers'][0]['env'] << {'name' => 'QUEUE', 'value' => '*'}
       File.write('kubernetes/worker.yml', YAML.dump(template))
 
       test.call
@@ -63,11 +72,11 @@ describe Kucodiff do
       end
     end
 
-    it "can ignore commands" do
+    it "can ignore" do
       in_temp_dir do
         File.write("a.yml", {"spec" => {"template" => {"spec" => {"containers" => [{"command" => ["a", "b"]}]}}}}.to_yaml)
         File.write("b.yml", {"spec" => {"template" => {"spec" => {"containers" => [{"command" => ["c", "d"]}]}}}}.to_yaml)
-        expect(Kucodiff.diff(['a.yml', 'b.yml'], ignore_command: true)).to eq({"a.yml-b.yml" => []})
+        expect(Kucodiff.diff(['a.yml', 'b.yml'], ignore: /\.command\./)).to eq({"a.yml-b.yml" => []})
       end
     end
   end
