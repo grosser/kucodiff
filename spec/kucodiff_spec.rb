@@ -62,6 +62,14 @@ describe Kucodiff do
         expect(Kucodiff.diff(['a.yml', 'b.yml'])).to eq({"a.yml-b.yml" => ["foo"]})
       end
     end
+
+    it "can ignore commands" do
+      in_temp_dir do
+        File.write("a.yml", {"spec" => {"template" => {"spec" => {"containers" => [{"command" => ["a", "b"]}]}}}}.to_yaml)
+        File.write("b.yml", {"spec" => {"template" => {"spec" => {"containers" => [{"command" => ["c", "d"]}]}}}}.to_yaml)
+        expect(Kucodiff.diff(['a.yml', 'b.yml'], ignore_command: true)).to eq({"a.yml-b.yml" => []})
+      end
+    end
   end
 
   describe "readme example" do

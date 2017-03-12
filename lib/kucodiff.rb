@@ -2,13 +2,15 @@ require 'yaml'
 
 module Kucodiff
   class << self
-    def diff(files)
+    def diff(files, ignore_command: false)
       raise ArgumentError, "Need 2+ files" if files.size < 2
 
       base = files.shift
       base_template = read(base)
       files.each_with_object({}) do |other, all|
-        all["#{base}-#{other}"] = different_keys(base_template, read(other))
+        result = different_keys(base_template, read(other))
+        result.reject! { |k| k.include?('.command.') } if ignore_command
+        all["#{base}-#{other}"] = result
       end
     end
 
