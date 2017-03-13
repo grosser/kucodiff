@@ -5,3 +5,4 @@ SingleCov.setup :rspec
 
 require "kucodiff/version"
 require "kucodiff"
+require "tmpdir"

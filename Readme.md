@@ -43,7 +43,6 @@ end
 TODO
 ====
  - pick first Job/Deployment/DaemonSet to diff and not just first element
- - 
 
 Author
 ======
