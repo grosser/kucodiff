@@ -79,6 +79,24 @@ describe Kucodiff do
         expect(Kucodiff.diff(['a.yml', 'b.yml'], ignore: /\.command\./)).to eq({"a.yml-b.yml" => []})
       end
     end
+
+    it "removes things that are expected" do
+      in_temp_dir do
+        File.write("a.yml", {"a" => 1}.to_yaml)
+        File.write("b.yml", {"a" => 1, "b" => 2}.to_yaml)
+        expect(Kucodiff.diff(['a.yml', 'b.yml'], expected: {"a.yml-b.yml" => ["b"]})).to eq({})
+      end
+    end
+
+    it "adds things that are unexpected" do
+      in_temp_dir do
+        File.write("a.yml", {"a" => 1}.to_yaml)
+        File.write("b.yml", {"a" => 1, "b" => 2}.to_yaml)
+        expect(Kucodiff.diff(['a.yml', 'b.yml'], expected: {"a.yml-b.yml" => ["c"], "a.yml-z.yml" => ["a"]})).to eq(
+          "a.yml-b.yml" => ["b", "c"], "a.yml-z.yml" => ["a"]
+        )
+      end
+    end
   end
 
   describe "readme example" do

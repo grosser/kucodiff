@@ -19,17 +19,23 @@ require 'minitest/autorun'
 
 describe "kubernetes configs" do
   it "has a small diff" do
-    expect(Kucodiff.diff(Dir["kubernetes/**/*.{yml,json}"], ignore: /\.(command|limits|requests)\./)).to eq(
-      "kubernetes/console.yml-kubernetes/server.yml" => %w[
-        metadata.name
-        spec.template.metadata.labels.proxy
-        spec.template.spec.containers.0.env.PORT
-      ],
-      "kubernetes/console.yml-kubernetes/worker.yml" => %w[
-        metadata.name
-        spec.template.spec.containers.0.env.QUEUE
-      ]
-    )
+    expect(
+      Kucodiff.diff(
+        Dir["kubernetes/**/*.{yml,json}"], 
+        ignore: /\.(command|limits|requests)\./, 
+        expected: {
+          "kubernetes/console.yml-kubernetes/server.yml" => %w[
+            metadata.name
+            spec.template.metadata.labels.proxy
+            spec.template.spec.containers.0.env.PORT
+          ],
+          "kubernetes/console.yml-kubernetes/worker.yml" => %w[
+            metadata.name
+            spec.template.spec.containers.0.env.QUEUE
+          ]
+        }
+      )
+    ).to eq({})
   end
 end
 ```

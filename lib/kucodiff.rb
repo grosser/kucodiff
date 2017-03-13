@@ -2,16 +2,23 @@ require 'yaml'
 
 module Kucodiff
   class << self
-    def diff(files, ignore: false)
+    def diff(files, ignore: false, expected: {})
       raise ArgumentError, "Need 2+ files" if files.size < 2
 
       base = files.shift
       base_template = read(base)
-      files.each_with_object({}) do |other, all|
+      diff = files.each_with_object({}) do |other, all|
         result = different_keys(base_template, read(other))
         result.reject! { |k| k =~ ignore } if ignore
         all["#{base}-#{other}"] = result.sort
       end
+
+      expected.each do |k, v|
+        result = xor(diff[k] || [], v)
+        result.empty? ? diff.delete(k) : diff[k] = result
+      end
+
+      diff
     end
 
     private
@@ -40,6 +47,10 @@ module Kucodiff
 
     def different_keys(a, b)
       (a.keys + b.keys).uniq.select { |k| a[k] != b[k] }
+    end
+
+    def xor(a, b)
+      a + b - (a & b)
     end
 
     # http://stackoverflow.com/questions/9647997/converting-a-nested-hash-into-a-flat-hash
