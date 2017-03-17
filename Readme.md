@@ -3,6 +3,8 @@ Smart diff for kubernetes configs to ensure symmetric configuration.
 Projects that deploy very similar components like a worker and server,
 often should only have a very small diff, Kucodiff ensures that no accidental diff is introduced.
 
+It will compare the first object per kubernetes config, so move the Job/Deployment/Daemonset to the top.
+
 Install
 =======
 
@@ -21,8 +23,8 @@ describe "kubernetes configs" do
   it "has a small diff" do
     expect(
       Kucodiff.diff(
-        Dir["kubernetes/**/*.{yml,json}"], 
-        ignore: /\.(command|limits|requests)\./, 
+        Dir["kubernetes/*.{yml,yaml}"].sort,
+        ignore: /\.(command|limits|requests)\./,
         expected: {
           "kubernetes/console.yml-kubernetes/server.yml" => %w[
             metadata.name
@@ -39,10 +41,6 @@ describe "kubernetes configs" do
   end
 end
 ```
-
-TODO
-====
- - pick first Job/Deployment/DaemonSet to diff and not just first element
 
 Author
 ======
