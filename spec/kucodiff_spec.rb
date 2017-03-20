@@ -97,6 +97,19 @@ describe Kucodiff do
         )
       end
     end
+
+    it "converts required_env to an array" do
+      in_temp_dir do
+        File.write("a.yml", {"spec" => {"template" => {"metadata" => {"annotations" => {"required_env" => "  a\nb,c d  "}}}}}.to_yaml)
+        File.write("b.yml", {"spec" => {"template" => {"metadata" => {"annotations" => {"required_env" => "f\nb,e d"}}}}}.to_yaml)
+        expect(Kucodiff.diff(['a.yml', 'b.yml'])).to eq("a.yml-b.yml" => [
+          "spec.template.metadata.annotations.required_env.a",
+          "spec.template.metadata.annotations.required_env.c",
+          "spec.template.metadata.annotations.required_env.e",
+          "spec.template.metadata.annotations.required_env.f",
+        ])
+      end
+    end
   end
 
   describe "readme example" do
@@ -123,19 +136,19 @@ describe Kucodiff do
     end
   end
 
-  describe ".hashify_container_env" do
+  describe ".hashify_container_env!" do
     it "leaves non containers alone" do
       input = {}
-      Kucodiff.send(:hashify_container_env, input)
+      Kucodiff.send(:hashify_container_env!, input)
       expect(input).to eq({})
     end
 
-    it "leaves non containers alone" do
+    it "converts container env to a hash for readable diffs" do
       input = {"spec" => {"template" => {"spec" => {"containers" => [
         {"env" => [{"name" => "a", "value" => "b"}]},
         {"env" => [{"name" => "c", "valueFrom" => "d"}]},
       ]}}}}
-      Kucodiff.send(:hashify_container_env, input)
+      Kucodiff.send(:hashify_container_env!, input)
       expect(input).to eq(
         "spec" => {"template" => {"spec" => {"containers" => [
           {"env" => {"a" => "b"}},

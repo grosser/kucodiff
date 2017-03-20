@@ -29,12 +29,14 @@ module Kucodiff
       else raise ArgumentError, "unknown file format in #{file}"
       end.first
 
-      hashify_container_env(content)
+      hashify_container_env!(content)
+      hashify_required_env!(content)
+
       flat_hash(content)
     end
 
-    # make env compareable
-    def hashify_container_env(content)
+    # make env comparable
+    def hashify_container_env!(content)
       containers = content.fetch('spec', {}).fetch('template', {}).fetch('spec', {}).fetch('containers', [])
       containers.each do |container|
         next unless container['env']
@@ -43,6 +45,12 @@ module Kucodiff
           h[v.fetch('name')] = v.fetch(value_key)
         end
       end
+    end
+
+    def hashify_required_env!(content)
+      key = 'required_env'
+      annotations = content.fetch('spec', {}).fetch('template', {}).fetch('metadata', {}).fetch('annotations', {})
+      annotations[key] = Hash[annotations[key].strip.split(/[\s,]/).map { |k| [k, true] }] if annotations[key]
     end
 
     def different_keys(a, b)
