@@ -100,13 +100,13 @@ describe Kucodiff do
 
     it "converts required_env to an array" do
       in_temp_dir do
-        File.write("a.yml", {"spec" => {"template" => {"metadata" => {"annotations" => {"required_env" => "  a\nb,c d  "}}}}}.to_yaml)
-        File.write("b.yml", {"spec" => {"template" => {"metadata" => {"annotations" => {"required_env" => "f\nb,e d"}}}}}.to_yaml)
+        File.write("a.yml", {"spec" => {"template" => {"metadata" => {"annotations" => {"samson/required_env" => "  a\nb,c d  "}}}}}.to_yaml)
+        File.write("b.yml", {"spec" => {"template" => {"metadata" => {"annotations" => {"samson/required_env" => "f\nb,e d"}}}}}.to_yaml)
         expect(Kucodiff.diff(['a.yml', 'b.yml'])).to eq("a.yml-b.yml" => [
-          "spec.template.metadata.annotations.required_env.a",
-          "spec.template.metadata.annotations.required_env.c",
-          "spec.template.metadata.annotations.required_env.e",
-          "spec.template.metadata.annotations.required_env.f",
+          "spec.template.metadata.annotations.samson/required_env.a",
+          "spec.template.metadata.annotations.samson/required_env.c",
+          "spec.template.metadata.annotations.samson/required_env.e",
+          "spec.template.metadata.annotations.samson/required_env.f",
         ])
       end
     end

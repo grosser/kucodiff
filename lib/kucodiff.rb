@@ -48,7 +48,7 @@ module Kucodiff
     end
 
     def hashify_required_env!(content)
-      key = 'required_env'
+      key = 'samson/required_env'
       annotations = content.fetch('spec', {}).fetch('template', {}).fetch('metadata', {}).fetch('annotations', {})
       annotations[key] = Hash[annotations[key].strip.split(/[\s,]/).map { |k| [k, true] }] if annotations[key]
     end
