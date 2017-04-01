@@ -110,6 +110,43 @@ describe Kucodiff do
         ])
       end
     end
+
+    describe "with indent_pod" do
+      it "produces full diff when comparing non-pods" do
+        in_temp_dir do
+          template = {"metadata" => {"annotations" => {"foo" => "bar"}}}
+          File.write("a.yml", {"spec" => {"template" => template, "other" => "ignores"}}.to_yaml)
+          File.write("b.yml", template.to_yaml)
+          expect(Kucodiff.diff(['a.yml', 'b.yml'], indent_pod: true)).to eq("a.yml-b.yml" => [
+            "metadata.annotations.foo",
+            "spec.other",
+            "spec.template.metadata.annotations.foo"
+          ])
+        end
+      end
+
+      it "produces little diff when comparing a pod with a deployment" do
+        in_temp_dir do
+          template = {"metadata" => {"annotations" => {"foo" => "bar"}}}
+          File.write("a.yml", {"spec" => {"template" => template, "other" => "ignores"}}.to_yaml)
+          File.write("b.yml", template.merge("kind" => "Pod").to_yaml)
+          expect(Kucodiff.diff(['a.yml', 'b.yml'], indent_pod: true)).to eq("a.yml-b.yml" => [
+            "spec.template.kind",
+          ])
+        end
+      end
+
+      it "creates full diff when comparing a pod with a pod" do
+        in_temp_dir do
+          template = {"metadata" => {"annotations" => {"foo" => "bar"}}, "kind" => "Pod"}
+          File.write("a.yml", template.to_yaml)
+          File.write("b.yml", template.merge("foo" => "bar").to_yaml)
+          expect(Kucodiff.diff(['a.yml', 'b.yml'], indent_pod: true)).to eq("a.yml-b.yml" => [
+            "spec.template.foo",
+          ])
+        end
+      end
+    end
   end
 
   describe "readme example" do

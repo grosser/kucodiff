@@ -2,13 +2,20 @@ require 'yaml'
 
 module Kucodiff
   class << self
-    def diff(files, ignore: false, expected: {})
+    def diff(files, ignore: false, indent_pod: false, expected: {})
       raise ArgumentError, "Need 2+ files" if files.size < 2
 
       base = files.shift
       base_template = read(base)
+
       diff = files.each_with_object({}) do |other, all|
-        result = different_keys(base_template, read(other))
+        other_template = read(other)
+        result =
+          if indent_pod
+            different_keys_pod_indented(base_template, other_template)
+          else
+            different_keys(base_template, other_template)
+          end
         result.reject! { |k| k =~ ignore } if ignore
         all["#{base}-#{other}"] = result.sort
       end
@@ -37,7 +44,7 @@ module Kucodiff
 
     # make env comparable
     def hashify_container_env!(content)
-      containers = content.fetch('spec', {}).fetch('template', {}).fetch('spec', {}).fetch('containers', [])
+      containers = template(content).fetch('spec', {}).fetch('containers', [])
       containers.each do |container|
         next unless container['env']
         container['env'] = container['env'].each_with_object({}) do |v, h|
@@ -49,8 +56,26 @@ module Kucodiff
 
     def hashify_required_env!(content)
       key = 'samson/required_env'
-      annotations = content.fetch('spec', {}).fetch('template', {}).fetch('metadata', {}).fetch('annotations', {})
+      annotations = template(content).fetch('metadata', {}).fetch('annotations', {})
       annotations[key] = Hash[annotations[key].strip.split(/[\s,]/).map { |k| [k, true] }] if annotations[key]
+    end
+
+    def different_keys_pod_indented(*templates)
+      ignore_unindented = false
+      prefix = "spec.template."
+
+      templates.map! do |template|
+        if template["kind"] == "Pod"
+          ignore_unindented = true
+          Hash[template.map { |k,v| [prefix + k, v] }]
+        else
+          template
+        end
+      end
+
+      diff = different_keys(*templates)
+      diff.select! { |k| k.start_with?(prefix) } if ignore_unindented
+      diff
     end
 
     def different_keys(a, b)
@@ -59,6 +84,10 @@ module Kucodiff
 
     def xor(a, b)
       a + b - (a & b)
+    end
+
+    def template(content)
+      content['kind'] == "Pod" ? content : content.fetch('spec', {}).fetch('template', {})
     end
 
     # http://stackoverflow.com/questions/9647997/converting-a-nested-hash-into-a-flat-hash
