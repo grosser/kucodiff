@@ -5,7 +5,9 @@ often should only have a very small diff, Kucodiff ensures that no accidental di
 
 It will compare the first object per kubernetes config, so move the Job/Deployment/Daemonset to the top.
 
-To cleanly compare a `Pod` with a `Deployment/Job/ReplicaSet`, use `indent_pod: true` option. 
+
+
+To cleanly compare a `Pod` with a `Deployment/Job/ReplicaSet`, use `indent_pod: true` option.
 
 Install
 =======
