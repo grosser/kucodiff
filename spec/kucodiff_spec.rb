@@ -64,6 +64,14 @@ describe Kucodiff do
       expect { Kucodiff.diff(['a.json', 'b.json']) }.to raise_error(ArgumentError, "unknown file format in a.json")
     end
 
+    it "shows where parse errors are" do
+      in_temp_dir do
+        File.write("a.yml", {"foo" => 1}.to_yaml)
+        File.write("b.yml", "[mysqld]\nstuff")
+        expect { Kucodiff.diff(['a.yml', 'b.yml']) }.to raise_error(/\(b.yml\): did not find/)
+      end
+    end
+
     it "reads the first object when multiple exist" do
       in_temp_dir do
         File.write("a.yml", {"foo" => 1}.to_yaml + {"bar" => 1}.to_yaml)

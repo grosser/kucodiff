@@ -32,7 +32,7 @@ module Kucodiff
 
     def read(file)
       content = if file.end_with?('.yml', '.yaml')
-        YAML.load_stream(File.read(file)) # TODO: test need for stream
+        YAML.load_stream(File.read(file), file) # TODO: test need for stream
       else raise ArgumentError, "unknown file format in #{file}"
       end.first
 
