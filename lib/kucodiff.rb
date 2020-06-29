@@ -31,10 +31,16 @@ module Kucodiff
     private
 
     def read(file)
-      content = if file.end_with?('.yml', '.yaml')
-        YAML.load_stream(File.read(file), file) # TODO: test need for stream
-      else raise ArgumentError, "unknown file format in #{file}"
-      end.first
+      content =
+        if file.end_with?('.yml', '.yaml')
+          if RUBY_VERSION >= "2.6.0"
+            YAML.load_stream(File.read(file), filename: file) # uncovered
+          else
+            YAML.load_stream(File.read(file), file) # uncovered
+          end
+        else
+          raise ArgumentError, "unknown file format in #{file}"
+        end.first
 
       hashify_container_env!(content)
       hashify_required_env!(content)
