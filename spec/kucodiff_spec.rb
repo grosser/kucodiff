@@ -107,6 +107,30 @@ describe Kucodiff do
       ])
     end
 
+    it "converts env to a hash" do
+      File.write("a.yml", {"kind" => "Pod", "spec" => {"containers" => [{"env" => [{ "name" => "a", "value" => "b" }]}]}}.to_yaml)
+      File.write("b.yml", {"kind" => "Pod", "spec" => {"containers" => [{"env" => [{ "name" => "a", "value" => "a" }]}]}}.to_yaml)
+      expect(Kucodiff.diff(['a.yml', 'b.yml'])).to eq("a.yml-b.yml" => [
+        "spec.containers.0.env.a"
+      ])
+    end
+
+    it "converts volumeMounts to hash" do
+      File.write("a.yml", {"kind" => "Pod", "spec" => {"containers" => [{"volumeMounts" => [{"name" => "a", "mountPath" => "/var/log"}]}]}}.to_yaml)
+      File.write("b.yml", {"kind" => "Pod", "spec" => {"containers" => [{"volumeMounts" => [{"name" => "a", "mountPath" => "/var/blog"}]}]}}.to_yaml)
+      expect(Kucodiff.diff(['a.yml', 'b.yml'])).to eq("a.yml-b.yml" => [
+        "spec.containers.0.volumeMounts.a.mountPath"
+      ])
+    end
+
+    it "converts volumes to hash" do
+      File.write("a.yml", {"kind" => "Pod", "spec" => {"volumes" => [{"name" => "a", "hostPath" => "/var/log"}]}}.to_yaml)
+      File.write("b.yml", {"kind" => "Pod", "spec" => {"volumes" => [{"name" => "a", "hostPath" => "/var/blog"}]}}.to_yaml)
+      expect(Kucodiff.diff(['a.yml', 'b.yml'])).to eq("a.yml-b.yml" => [
+        "spec.volumes.a.hostPath"
+      ])
+    end
+
     describe "with indent_pod" do
       it "produces full diff when comparing non-pods" do
         template = {"metadata" => {"annotations" => {"foo" => "bar"}}}
@@ -163,25 +187,23 @@ describe Kucodiff do
     end
   end
 
-  describe ".hashify_container_env!" do
+  describe ".hashify_named_array!" do
     it "leaves non containers alone" do
       input = {}
-      Kucodiff.send(:hashify_container_env!, input)
+      Kucodiff.send(:hashify_named_array!, input, "env", first: true)
       expect(input).to eq({})
     end
 
     it "converts container env to a hash for readable diffs" do
-      input = {"spec" => {"template" => {"spec" => {"containers" => [
-        {"env" => [{"name" => "a", "value" => "b"}]},
-        {"env" => [{"name" => "c", "valueFrom" => "d"}]},
-      ]}}}}
-      Kucodiff.send(:hashify_container_env!, input)
-      expect(input).to eq(
-        "spec" => {"template" => {"spec" => {"containers" => [
-          {"env" => {"a" => "b"}},
-          {"env" => {"c" => "d"}},
-        ]}}}
-      )
+      input = {"env" => [{"name" => "a", "value" => "b"}]}
+      Kucodiff.send(:hashify_named_array!, input, "env", first: true)
+      expect(input).to eq("env" => {"a" => "b"})
+    end
+
+    it "converts volumes to a hash for readable diffs" do
+      input = {"volumes" => [{"name" => "a", "value" => "b", "foo" => "bar"}]}
+      Kucodiff.send(:hashify_named_array!, input, "volumes", first: false)
+      expect(input).to eq("volumes" => {"a" => {"value" => "b", "foo" => "bar"}})
     end
   end
 end

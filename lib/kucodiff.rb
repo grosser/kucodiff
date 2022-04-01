@@ -42,21 +42,28 @@ module Kucodiff
           raise ArgumentError, "unknown file format in #{file}"
         end.first
 
-      hashify_container_env!(content)
+      template = template(content)
+      template.dig("spec", "containers")&.each do |container|
+        hashify_named_array!(container, "env", first: true)
+        hashify_named_array!(container, "volumeMounts", first: false)
+      end
+      hashify_named_array!(template["spec"], "volumes", first: false)
       hashify_required_env!(content)
 
       flat_hash(content)
     end
 
-    # make env comparable
-    def hashify_container_env!(content)
-      containers = template(content).fetch('spec', {}).fetch('containers', [])
-      containers.each do |container|
-        next unless container['env']
-        container['env'] = container['env'].each_with_object({}) do |v, h|
-          value_key = (v.keys - ['name']).first
-          h[v.fetch('name')] = v.fetch(value_key)
-        end
+    def hashify_named_array!(object, key, first:)
+      return if !object || !(array = object[key])
+      object[key] = array.to_h do |v|
+        keep = (v.keys - ['name'])
+        value =
+          if first
+            v.fetch(keep.first)
+          else
+            v.slice(*keep)
+          end
+        [v.fetch('name'), value]
       end
     end
 
