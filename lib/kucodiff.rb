@@ -10,12 +10,8 @@ module Kucodiff
 
       diff = files.each_with_object({}) do |other, all|
         other_template = read(other)
-        result =
-          if indent_pod
-            different_keys_pod_indented(base_template, other_template)
-          else
-            different_keys(base_template, other_template)
-          end
+        pod_indented!(base_template, other_template) if indent_pod
+        result = different_keys(base_template, other_template)
         result.reject! { |k| k =~ ignore } if ignore
         all["#{base}-#{other}"] = result.sort
       end
@@ -73,22 +69,23 @@ module Kucodiff
       annotations[key] = Hash[annotations[key].strip.split(/[\s,]/).map { |k| [k, true] }] if annotations[key]
     end
 
-    def different_keys_pod_indented(*templates)
-      ignore_unindented = false
-      prefix = "spec.template."
+    # templates are flat hashes already
+    def pod_indented!(*templates)
+      kinds = templates.map { |t| t["kind"] }
+      return if (kinds & ["Pod", "PodTemplate"]).empty? || kinds.uniq.size == 1
 
-      templates.map! do |template|
-        if template["kind"] == "Pod"
-          ignore_unindented = true
-          Hash[template.map { |k,v| [prefix + k, v] }]
+      templates.each do |template|
+        case template["kind"]
+        when "Pod"
+          # all good
+        when "PodTemplate"
+          template.select! { |k, _| k.start_with?("template.") }
+          template.transform_keys! { |k| k.sub("template.", "") }
         else
-          template
+          template.select! { |k, _| k.start_with?("spec.template.") }
+          template.transform_keys! { |k| k.sub("spec.template.", "") }
         end
       end
-
-      diff = different_keys(*templates)
-      diff.select! { |k| k.start_with?(prefix) } if ignore_unindented
-      diff
     end
 
     def different_keys(a, b)
@@ -100,7 +97,11 @@ module Kucodiff
     end
 
     def template(content)
-      content['kind'] == "Pod" ? content : content.fetch('spec', {}).fetch('template', {})
+      case content['kind']
+      when "Pod" then content
+      when "PodTemplate" then content.fetch('template')
+      else content.dig('spec', 'template') || {}
+      end
     end
 
     # http://stackoverflow.com/questions/9647997/converting-a-nested-hash-into-a-flat-hash

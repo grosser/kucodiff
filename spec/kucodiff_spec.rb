@@ -107,6 +107,14 @@ describe Kucodiff do
       ])
     end
 
+    it "can compare PodTemplate" do
+      File.write("a.yml", {"spec" => {"template" => {"metadata" => {"annotations" => {"foo" => "bar", "bar" => "baz"}}}}}.to_yaml)
+      File.write("b.yml", {"kind" => "PodTemplate", "template" => {"metadata" => {"annotations" => {"foo" => "bar", "bar" => "no"}}}}.to_yaml)
+      expect(Kucodiff.diff(['a.yml', 'b.yml'], indent_pod: true)).to eq("a.yml-b.yml" => [
+        "metadata.annotations.bar"
+      ])
+    end
+
     it "converts env to a hash" do
       File.write("a.yml", {"kind" => "Pod", "spec" => {"containers" => [{"env" => [{ "name" => "a", "value" => "b" }]}]}}.to_yaml)
       File.write("b.yml", {"kind" => "Pod", "spec" => {"containers" => [{"env" => [{ "name" => "a", "value" => "a" }]}]}}.to_yaml)
@@ -148,7 +156,7 @@ describe Kucodiff do
         File.write("a.yml", {"spec" => {"template" => template, "other" => "ignores"}}.to_yaml)
         File.write("b.yml", template.merge("kind" => "Pod").to_yaml)
         expect(Kucodiff.diff(['a.yml', 'b.yml'], indent_pod: true)).to eq("a.yml-b.yml" => [
-          "spec.template.kind",
+          "kind",
         ])
       end
 
@@ -157,7 +165,7 @@ describe Kucodiff do
         File.write("a.yml", template.to_yaml)
         File.write("b.yml", template.merge("foo" => "bar").to_yaml)
         expect(Kucodiff.diff(['a.yml', 'b.yml'], indent_pod: true)).to eq("a.yml-b.yml" => [
-          "spec.template.foo",
+          "foo",
         ])
       end
     end
