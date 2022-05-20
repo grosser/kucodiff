@@ -2,7 +2,7 @@ require 'yaml'
 
 module Kucodiff
   class << self
-    def diff(files, ignore: false, indent_pod: false, expected: {})
+    def diff(files, ignore: false, indent_pod: true, expected: {})
       raise ArgumentError, "Need 2+ files" if files.size < 2
 
       base = files.shift

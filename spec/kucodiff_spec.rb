@@ -110,7 +110,7 @@ describe Kucodiff do
     it "can compare PodTemplate" do
       File.write("a.yml", {"spec" => {"template" => {"metadata" => {"annotations" => {"foo" => "bar", "bar" => "baz"}}}}}.to_yaml)
       File.write("b.yml", {"kind" => "PodTemplate", "template" => {"metadata" => {"annotations" => {"foo" => "bar", "bar" => "no"}}}}.to_yaml)
-      expect(Kucodiff.diff(['a.yml', 'b.yml'], indent_pod: true)).to eq("a.yml-b.yml" => [
+      expect(Kucodiff.diff(['a.yml', 'b.yml'])).to eq("a.yml-b.yml" => [
         "metadata.annotations.bar"
       ])
     end
@@ -144,7 +144,7 @@ describe Kucodiff do
         template = {"metadata" => {"annotations" => {"foo" => "bar"}}}
         File.write("a.yml", {"spec" => {"template" => template, "other" => "ignores"}}.to_yaml)
         File.write("b.yml", template.to_yaml)
-        expect(Kucodiff.diff(['a.yml', 'b.yml'], indent_pod: true)).to eq("a.yml-b.yml" => [
+        expect(Kucodiff.diff(['a.yml', 'b.yml'])).to eq("a.yml-b.yml" => [
           "metadata.annotations.foo",
           "spec.other",
           "spec.template.metadata.annotations.foo"
@@ -155,7 +155,7 @@ describe Kucodiff do
         template = {"metadata" => {"annotations" => {"foo" => "bar"}}}
         File.write("a.yml", {"spec" => {"template" => template, "other" => "ignores"}}.to_yaml)
         File.write("b.yml", template.merge("kind" => "Pod").to_yaml)
-        expect(Kucodiff.diff(['a.yml', 'b.yml'], indent_pod: true)).to eq("a.yml-b.yml" => [
+        expect(Kucodiff.diff(['a.yml', 'b.yml'])).to eq("a.yml-b.yml" => [
           "kind",
         ])
       end
@@ -164,8 +164,20 @@ describe Kucodiff do
         template = {"metadata" => {"annotations" => {"foo" => "bar"}}, "kind" => "Pod"}
         File.write("a.yml", template.to_yaml)
         File.write("b.yml", template.merge("foo" => "bar").to_yaml)
-        expect(Kucodiff.diff(['a.yml', 'b.yml'], indent_pod: true)).to eq("a.yml-b.yml" => [
+        expect(Kucodiff.diff(['a.yml', 'b.yml'])).to eq("a.yml-b.yml" => [
           "foo",
+        ])
+      end
+
+      it "produces full diff when opting out" do
+        template = {"metadata" => {"annotations" => {"foo" => "bar"}}}
+        File.write("a.yml", {"spec" => {"template" => template, "other" => "ignores"}}.to_yaml)
+        File.write("b.yml", template.merge("kind" => "Pod").to_yaml)
+        expect(Kucodiff.diff(['a.yml', 'b.yml'], indent_pod: false)).to eq("a.yml-b.yml" => [
+          "kind",
+          "metadata.annotations.foo",
+          "spec.other",
+          "spec.template.metadata.annotations.foo"
         ])
       end
     end
