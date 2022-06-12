@@ -6,10 +6,12 @@ module Kucodiff
       raise ArgumentError, "Need 2+ files" if files.size < 2
 
       base = files.shift
-      base_template = read(base)
 
       diff = files.each_with_object({}) do |other, all|
+        # re-read both since we modify them
+        base_template = read(base)
         other_template = read(other)
+
         pod_indented!(base_template, other_template) if indent_pod
         result = different_keys(base_template, other_template)
         result.reject! { |k| k =~ ignore } if ignore

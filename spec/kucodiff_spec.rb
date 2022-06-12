@@ -160,6 +160,14 @@ describe Kucodiff do
         ])
       end
 
+      it "does not modify templates" do
+        template = {"metadata" => {"annotations" => {"foo" => "bar"}}}
+        File.write("a.yml", {"kind" => "PodTemplate", "template" => template, "other" => "ignores"}.to_yaml)
+        File.write("b.yml", {"spec" => {"template" => template, "other" => "ignores"}}.to_yaml)
+        File.write("c.yml", template.merge("kind" => "Pod").to_yaml)
+        expect(Kucodiff.diff(['a.yml', 'b.yml', 'c.yml'])).to eq("a.yml-b.yml" => [], "a.yml-c.yml" => ["kind"])
+      end
+
       it "creates full diff when comparing a pod with a pod" do
         template = {"metadata" => {"annotations" => {"foo" => "bar"}}, "kind" => "Pod"}
         File.write("a.yml", template.to_yaml)
